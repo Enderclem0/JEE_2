@@ -12,6 +12,14 @@ import java.util.ArrayList;
 
 public class BOperations {
 
+    static {
+        try {
+            Class.forName("org.mariadb.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("MariaDB JDBC Driver not found!", e);
+        }
+    }
+
     private static final String DB_URL = "jdbc:mariadb://localhost:3306/jee";
     private static final String USER = "jee_admin";
     private static final String PASS = "root";

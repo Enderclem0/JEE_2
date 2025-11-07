@@ -1,8 +1,10 @@
 package fr.uge.jee_td2.servlets;
 
+import fr.uge.jee_td2.JSPEnum;
 import fr.uge.jee_td2.MessageDErreurs;
 import fr.uge.jee_td2.TraitementException;
 import fr.uge.jee_td2.javaBeans.BOperations;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -24,36 +26,25 @@ public class SOperations extends HttpServlet {
         return Optional.of(NoDeCompte);
     }
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        var noDeCompte = getNoDeCompte(request);
-        if (noDeCompte.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "NoDeCompte parameter is missing or empty.");
-            return;
-        }
-        response.setContentType("text/html");
-        try (PrintWriter out = response.getWriter()) {
-            out.println("<html><body>");
-            out.println("<h1>Gestion des opérations pour le compte: " + noDeCompte.get() + "</h1>");
-            out.println("</body></html>");
-        }
-    }
-
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+    private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var bean = new BOperations();
-        var noDeCompte = getNoDeCompte(request);
+        var noDeCompte = getNoDeCompte(req);
         if (noDeCompte.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "NoDeCompte parameter is missing or empty.");
+            RequestDispatcher dispatcher = req.getRequestDispatcher(JSPEnum.JSaisiNoDeCompte.getJspPath());
+            dispatcher.forward(req, resp);
             return;
         }
         TraitementException exception = null;
-        bean.setNoDeCompte(noDeCompte.get());
         try {
+            bean.ouvrirConnexion();
+            bean.setNoDeCompte(noDeCompte.get());
             bean.consulter();
+            bean.fermerConnexion();
         } catch (TraitementException e) {
             exception = e;
         }
-        response.setContentType("text/html");
-        try (PrintWriter out = response.getWriter()) {
+        resp.setContentType("text/html");
+        try (PrintWriter out = resp.getWriter()) {
             if (exception == null) {
                 out.println("<html><body>");
                 out.println("<h1>NCompte: "+bean.getNoDeCompte()+"</h1>");
@@ -71,5 +62,13 @@ public class SOperations extends HttpServlet {
             }
 
         }
+    }
+
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        processRequest(request, response);
+    }
+
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        processRequest(request, response);
     }
 }
