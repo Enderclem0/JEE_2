@@ -1,7 +1,6 @@
 package fr.uge.jee_td2.servlets;
 
 import fr.uge.jee_td2.JSPEnum;
-import fr.uge.jee_td2.MessageDErreurs;
 import fr.uge.jee_td2.TraitementException;
 import fr.uge.jee_td2.javaBeans.BOperations;
 import jakarta.servlet.RequestDispatcher;
@@ -12,63 +11,158 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Optional;
 
-@WebServlet("/GestionsOperations")
+@WebServlet("/Compte/GestionOperations")
 public class SOperations extends HttpServlet {
 
-    private Optional<String> getNoDeCompte(HttpServletRequest req) {
-        var NoDeCompte = req.getParameter("NoDeCompte");
-        if (NoDeCompte == null || NoDeCompte.isBlank()) {
-            return Optional.empty();
-        }
-        return Optional.of(NoDeCompte);
+    @Override
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        request.setAttribute("CodeAffichage", "0");
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JSaisiNoDeCompte.getJspPath());
+        dispatcher.forward(request, response);
     }
 
-    private void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        var bean = new BOperations();
-        var noDeCompte = getNoDeCompte(req);
-        if (noDeCompte.isEmpty()) {
-            RequestDispatcher dispatcher = req.getRequestDispatcher(JSPEnum.JSaisiNoDeCompte.getJspPath());
-            dispatcher.forward(req, resp);
-            return;
+    private double verifyOperation(String valeurStr) throws TraitementException {
+        if (valeurStr == null || valeurStr.isBlank()) {
+            throw new TraitementException("6"); // "La valeur est obligatoire"
         }
-        TraitementException exception = null;
+
         try {
+            double valeur = Double.parseDouble(valeurStr);
+            if (valeur <= 0) {
+                throw new TraitementException("7"); // "La valeur doit être positive"
+            }
+            return valeur;
+        } catch (NumberFormatException e) {
+            throw new TraitementException("6"); // "La valeur doit être un nombre"
+        }
+    }
+
+    private void processTraitement(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String noDeCompte = request.getParameter("NoDeCompte");
+        String operation = request.getParameter("Opération");
+        String valeurStr = request.getParameter("Valeur");
+
+        BOperations bean = new BOperations();
+
+        try {
+            verifyOperation(valeurStr);
             bean.ouvrirConnexion();
-            bean.setNoDeCompte(noDeCompte.get());
+            bean.setNoDeCompte(noDeCompte);
+            bean.setOp(operation);
+            bean.setValeur(valeurStr);
+            bean.traiter();
+
             bean.consulter();
             bean.fermerConnexion();
+
+            // 4. Succès : Rester sur JOperations avec un message "Opération réussie"
+            request.setAttribute("beanOperations", bean);
+            request.setAttribute("CodeAffichage", "20");
+
+            RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JOperations.getJspPath());
+            dispatcher.forward(request, response);
+
         } catch (TraitementException e) {
-            exception = e;
-        }
-        resp.setContentType("text/html");
-        try (PrintWriter out = resp.getWriter()) {
-            if (exception == null) {
-                out.println("<html><body>");
-                out.println("<h1>NCompte: "+bean.getNoDeCompte()+"</h1>");
-                out.println("<h1>Nom: "+bean.getNom()+"</h1>");
-                out.println("<h1>Prenom: "+bean.getPrenom()+"</h1>");
-                out.println("<h1>Solde: "+bean.getSolde()+"</h1>");
-                out.println("</body></html>");
-            }
-            else {
-                String msgErreur = MessageDErreurs.getMessageDerreur(exception.getMessage());
-                out.println("<html><body>");
-                out.println("<h1>Erreur lors de la consultation du compte: "+msgErreur+"</h1>");
-                out.println("</body></html>");
+            // 5. Échec : Rester sur JOperations avec le message d'erreur
+            request.setAttribute("CodeAffichage", e.getMessage()); // ex: "6" ou "7"
 
+            // Il faut quand même renvoyer les infos du compte !
+            try {
+                // On re-consulte le compte pour avoir son état actuel
+                bean.ouvrirConnexion();
+                bean.setNoDeCompte(noDeCompte);
+                bean.consulter();
+                bean.fermerConnexion();
+            } catch (TraitementException e2) {
+                // Si la re-consultation échoue aussi, on renvoie à la saisie
+                request.setAttribute("CodeAffichage", e2.getMessage());
+                RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JSaisiNoDeCompte.getJspPath());
+                dispatcher.forward(request, response);
+                return;
             }
 
+            request.setAttribute("beanOperations", bean); // Renvoyer le bean
+            RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JOperations.getJspPath());
+            dispatcher.forward(request, response);
         }
     }
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        processRequest(request, response);
+    private void processConsultation(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String noDeCompte = request.getParameter("NoDeCompte");
+        request.setAttribute("noDeCompte", noDeCompte);
+
+        try {
+            BOperations bean = consultation(noDeCompte);
+
+            request.setAttribute("beanOperations", bean);
+            request.setAttribute("CodeAffichage", "10"); // Succès
+
+            RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JOperations.getJspPath());
+            dispatcher.forward(request, response);
+
+        } catch (TraitementException e) {
+            request.setAttribute("CodeAffichage", e.getMessage());
+
+            RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JSaisiNoDeCompte.getJspPath());
+            dispatcher.forward(request, response);
+        }
     }
 
+    @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        processRequest(request, response);
+
+        String demande = request.getParameter("Demande");
+
+        if ("Consulter".equals(demande)) {
+            processConsultation(request, response);
+
+        } else if ("Traiter".equals(demande)) {
+            processTraitement(request, response);
+
+        } else if ("FinTraitement".equals(demande)) {
+            doGet(request, response);
+        } else {
+            doGet(request, response);
+        }
+    }
+
+    private void verifNoDeCompte(String noDeCompte) throws TraitementException {
+        if (noDeCompte == null || noDeCompte.isBlank()) {
+            throw new TraitementException("5");
+        }
+
+        if (noDeCompte.length() != 4) {
+            throw new TraitementException("4");
+        }
+
+        try {
+            Integer.parseInt(noDeCompte);
+        } catch (NumberFormatException e) {
+            throw new TraitementException("5");
+        }
+    }
+
+    private BOperations consultation(String noDeCompte) throws TraitementException {
+        verifNoDeCompte(noDeCompte);
+
+        BOperations bean = new BOperations();
+        try {
+            bean.ouvrirConnexion();
+            bean.setNoDeCompte(noDeCompte);
+            bean.consulter();
+        } finally {
+            try {
+                bean.fermerConnexion();
+            } catch (TraitementException e) {
+                e.printStackTrace();
+            }
+        }
+        return bean;
     }
 }

@@ -133,19 +133,26 @@ public class BOperations {
             try (var preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setString(1, getNoDeCompte());
                 var rs = preparedStatement.executeQuery();
-                rs.next();
-                this.nom = rs.getString("NOM");
-                this.prenom = rs.getString("PRENOM");
-                this.solde = rs.getBigDecimal("SOLDE");
+
+                if (rs.next()) {
+                    this.nom = rs.getString("NOM");
+                    this.prenom = rs.getString("PRENOM");
+                    this.solde = rs.getBigDecimal("SOLDE");
+                } else {
+                    throw new TraitementException("3");
+                }
             }
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.getMessage());
-            throw new TraitementException("3");
+            throw new TraitementException("22");
         }
     }
 
-    public void traiter() throws TraitementException, SQLException {
+    public void traiter() throws TraitementException {
         boolean doCommit = true;
+
+        String opPourBdd;
+
         try {
             var query = """
                     SELECT SOLDE FROM Compte WHERE NOCOMPTE = ?
@@ -155,14 +162,18 @@ public class BOperations {
                 var rs = preparedStatement.executeQuery();
                 rs.next();
                 this.ancienSolde = rs.getBigDecimal("SOLDE");
-                switch (op) {
-                    case "+":
+
+                opPourBdd = switch (op) {
+                    case "Crédit" -> {
                         nouveauSolde = ancienSolde.add(valeur);
-                        break;
-                    case "-":
+                        yield "+";
+                    }
+                    case "Débit" -> {
                         nouveauSolde = ancienSolde.subtract(valeur);
-                        break;
-                }
+                        yield "-";
+                    }
+                    default -> throw new TraitementException("22");
+                };
             }
             if (nouveauSolde.compareTo(BigDecimal.ZERO) < 0) {
                 System.err.println("Le solde est insuffisant, transaction annulée");
@@ -182,7 +193,9 @@ public class BOperations {
                 preparedInsertion.setString(1, getNoDeCompte());
                 preparedInsertion.setDate(2, Date.valueOf(LocalDate.now()));
                 preparedInsertion.setTime(3, Time.valueOf(LocalTime.now()));
-                preparedInsertion.setString(4, getOp());
+
+                preparedInsertion.setString(4, opPourBdd); // au lieu de getOp()
+
                 preparedInsertion.setString(5, getValeur());
                 preparedInsertion.executeUpdate();
             }
@@ -191,10 +204,14 @@ public class BOperations {
             System.err.println("SQL Exception: " + e.getMessage());
             throw new TraitementException("22");
         } finally {
-            if (doCommit) {
-                connection.commit();
-            } else {
-                connection.rollback();
+            try {
+                if (doCommit) {
+                    connection.commit();
+                } else {
+                    connection.rollback();
+                }
+            } catch (SQLException e) {
+                throw new TraitementException("22");
             }
         }
     }
