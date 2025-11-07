@@ -1,7 +1,8 @@
 package fr.uge.jee_td2;
 
 public enum JSPEnum {
-    JSaisiNoDeCompte("JSaisiNoDeCompte.jsp");
+    JSaisiNoDeCompte("JSaisiNoDeCompte.jsp"),
+    JOperations("JOperations.jsp");
 
     private final String jspPath;   // The private file path (e.g., "/WEB-INF/jsp/login.jsp")
     JSPEnum(String jspPath) {
