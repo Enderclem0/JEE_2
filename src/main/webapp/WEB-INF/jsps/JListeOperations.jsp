@@ -47,7 +47,15 @@
 </head>
 <body>
 
-<% if (bean != null) { %>
+<% if (bean != null) {
+    String dateInf = (bean.getDateInf() != null) ? bean.getDateInf() : "";
+    String dateSup = (bean.getDateSup() != null) ? bean.getDateSup() : "";
+
+    String valeur = "";
+    try { valeur = bean.getValeur(); } catch (Exception e) { valeur = ""; }
+
+    String operation = (bean.getOp() != null) ? bean.getOp() : "Crédit";
+%>
 
 <h2>Historique du compte N° <%= bean.getNoDeCompte() %>
 </h2>
@@ -60,6 +68,10 @@
 <form action="${pageContext.request.contextPath}/Compte/GestionOperations" method="POST">
     <%-- Important : On doit renvoyer le N° de compte pour que la servlet sache qui on consulte --%>
     <input type="hidden" name="NoDeCompte" value="<%= bean.getNoDeCompte() %>">
+    <input type="hidden" name="Valeur" value="<%= valeur %>">
+    <input type="hidden" name="Opération" value="<%= operation %>">
+
+
 
     <label for="DateInf">Du :</label>
     <input type="date" id="DateInf" name="DateInf" value="<%= (bean.getDateInf() != null) ? bean.getDateInf() : "" %>"
@@ -101,20 +113,49 @@
 <p style="color: orange;">Aucune opération trouvée pour cette période.</p>
 <% } %>
 
+<%-- BOUTON RETOUR form --%>
+<form action="${pageContext.request.contextPath}/Compte/GestionOperations" method="POST">
+
+    <%-- Champs cachés pour conserver l'état au retour --%>
+    <input type="hidden" name="NoDeCompte" value="<%= bean.getNoDeCompte() %>">
+    <input type="hidden" name="DateInf" value="<%= (bean.getDateInf() != null) ? bean.getDateInf() : "" %>">
+    <input type="hidden" name="DateSup" value="<%= (bean.getDateSup() != null) ? bean.getDateSup() : "" %>">
+
+    <%-- Gestion sécurisée de la valeur pour éviter le null --%>
+    <%
+        String valHidden = "";
+        try { valHidden = bean.getValeur(); } catch(Exception e) {}
+    %>
+    <input type="hidden" name="Valeur" value="<%= valHidden %>">
+    <input type="hidden" name="Opération" value="<%= (bean.getOp() != null) ? bean.getOp() : "Crédit" %>">
+
+    <button type="submit" name="Demande" value="Retour" class="btn-retour">Retour</button>
+</form>
+
 <%
 } else if (errorCode != null && !errorCode.equals("0")) {
     String messageErreur = fr.uge.jee_td2.MessageDErreurs.getMessageDerreur(errorCode);
+    String noDeCompte = (String) request.getAttribute("NoDeCompte");
+    String dateInf = (String) request.getAttribute("DateInf");
+    String dateSup = (String) request.getAttribute("DateSup");
+    String valeur = (String) request.getAttribute("Valeur");
+    String operation = (String) request.getAttribute("Opération");
 %>
 
-<hr>
+<p style="color: red; font-weight: bold;"><%= messageErreur %>
+</p>
 
 <%-- BOUTON RETOUR form --%>
 <form action="${pageContext.request.contextPath}/Compte/GestionOperations" method="POST">
-    <button type="submit" name="Retour">Retour</button>
+    <input type="hidden" name="NoDeCompte" value="<%= noDeCompte %>">
+    <input type="hidden" name="DateInf" value="<%= dateInf %>">
+    <input type="hidden" name="DateSup" value="<%= dateSup %>">
+    <input type="hidden" name="Valeur" value="<%= valeur %>">
+    <input type="hidden" name="Opération" value="<%= operation %>">
+    <button type="submit" name="Demande" value="Retour">Retour</button>
 </form>
 
 </body>
 </html>
-<p style="color: red; font-weight: bold;"><%= messageErreur %>
-</p>
+
 <% } %>

@@ -38,8 +38,7 @@ public class SOperations extends HttpServlet {
         }
     }
 
-    private void processTraitement(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    private void processTraitement(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         String noDeCompte = request.getParameter("NoDeCompte");
         String operation = request.getParameter("Opération");
@@ -88,17 +87,16 @@ public class SOperations extends HttpServlet {
         }
     }
 
-    private void processConsultation(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
+    private void processConsultation(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String noDeCompte = request.getParameter("NoDeCompte");
-        request.setAttribute("noDeCompte", noDeCompte);
+        request.setAttribute("NoDeCompte", noDeCompte);
 
         try {
             BOperations bean = consultation(noDeCompte);
 
+
             request.setAttribute("beanOperations", bean);
-            request.setAttribute("CodeAffichage", "10"); // Succès
+            request.setAttribute("CodeAffichage", "10");
 
             RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JOperations.getJspPath());
             dispatcher.forward(request, response);
@@ -111,14 +109,57 @@ public class SOperations extends HttpServlet {
         }
     }
 
-    private void processLister(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    public void processRetour(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String noDeCompte = request.getParameter("NoDeCompte");
-        request.setAttribute("noDeCompte", noDeCompte);
+
+        // Création du bean pour restaurer l'état
+        BOperations bean = new BOperations();
+        bean.setNoDeCompte(noDeCompte);
+
+        // Restauration des dates
+        bean.setDateInf(request.getParameter("DateInf"));
+        bean.setDateSup(request.getParameter("DateSup"));
+
+        // Restauration Valeur et Opération
+        String val = request.getParameter("Valeur");
+        if (val != null && !val.isBlank()) {
+            try {
+                bean.setValeur(val);
+            } catch (Exception e) {
+            }
+        }
+        bean.setOp(request.getParameter("Opération"));
+
+        // On re-consulte la BDD pour avoir le solde/nom à jour
+        try {
+            bean.ouvrirConnexion();
+            bean.consulter();
+            bean.fermerConnexion();
+        } catch (TraitementException e) {
+            // Gérer l'erreur si besoin
+        }
+
+        request.setAttribute("beanOperations", bean);
+        request.setAttribute("CodeAffichage", "12"); // Code "Retour" (facultatif)
+
+        // On renvoie vers la page principale
+        RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JOperations.getJspPath());
+        dispatcher.forward(request, response);
+    }
+
+    private void processLister(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String noDeCompte = request.getParameter("NoDeCompte");
+        request.setAttribute("NoDeCompte", noDeCompte);
         BOperations bean = new BOperations();
         bean.setDateInf(request.getParameter("DateInf"));
         bean.setDateSup(request.getParameter("DateSup"));
         bean.setNoDeCompte(noDeCompte);
+
+        String val = request.getParameter("Valeur");
+        if (val != null && !val.isBlank()) {
+            bean.setValeur(val);
+        }
+        bean.setOp(request.getParameter("Opération"));
 
         try {
             bean.ouvrirConnexion();
@@ -143,14 +184,14 @@ public class SOperations extends HttpServlet {
 
         if ("Consulter".equals(demande)) {
             processConsultation(request, response);
-
         } else if ("Traiter".equals(demande)) {
             processTraitement(request, response);
-
         } else if ("FinTraitement".equals(demande)) {
             doGet(request, response);
         } else if ("Lister".equals(demande)) {
             processLister(request, response);
+        } else if ("Retour".equals(demande)) {
+            processRetour(request, response);
         } else {
             doGet(request, response);
         }

@@ -30,6 +30,14 @@
                 break;
         }
     }
+
+    String valPrecedente = "";
+    String opPrecedente = "Crédit";
+
+    if (bean != null) {
+        try { valPrecedente = bean.getValeur(); } catch(Exception e) {}
+        if (bean.getOp() != null) opPrecedente = bean.getOp();
+    }
 %>
 
 <html>
@@ -62,14 +70,16 @@
 
     <input type="hidden" name="NoDeCompte" value="<%= bean.getNoDeCompte() %>">
 
-    <input type="radio" id="Crédit" name="Opération" value="Crédit" checked/>
+    <input type="radio" id="Crédit" name="Opération" value="Crédit" <%= opPrecedente.equals("Crédit") ? "checked" : "" %> />
     <label for="Crédit">Crédit</label>
-    <input type="radio" id="Débit" name="Opération" value="Débit"/>
+
+    <input type="radio" id="Débit" name="Opération" value="Débit" <%= opPrecedente.equals("Débit") ? "checked" : "" %> />
     <label for="Débit">Débit</label>
+
     <br>
 
     <label for="Valeur">Valeur:</label>
-    <input type="text" id="Valeur" name="Valeur">
+    <input type="text" id="Valeur" name="Valeur" value="<%= valPrecedente %>">
     <label for="Valeur"> Euro</label>
     <br><br>
 
@@ -86,7 +96,7 @@
     <button type="submit" name="Demande" value="Lister">Afficher la liste</button>
 
     <button type="submit" name="Demande" value="Traiter">Traiter</button>
-    <button type="submit" name="Demande" value="FinTraitement">Fin du Traitement</button>
+    <button type="submit" name="Demande" value="FinTraitement" formnovalidate>Fin du Traitement</button>
 </form>
 
 <% } else { %>

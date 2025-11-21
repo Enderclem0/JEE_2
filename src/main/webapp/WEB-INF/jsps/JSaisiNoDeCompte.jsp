@@ -9,7 +9,7 @@
         messageErreur = MessageDErreurs.getMessageDerreur(codeAffichage);
     }
 
-    String noCompteSaisi = (String) request.getAttribute("noDeCompte");
+    String noCompteSaisi = (String) request.getAttribute("NoDeCompte");
     if (noCompteSaisi == null) {
         noCompteSaisi = "";
     }
