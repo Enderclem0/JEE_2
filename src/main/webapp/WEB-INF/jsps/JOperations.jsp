@@ -26,7 +26,9 @@
             case "3":
             case "21":
             case "22":
+            default:
                 message = MessageDErreurs.getMessageDerreur(codeAffichage);
+                messageColor = "red";
                 break;
         }
     }

@@ -1,6 +1,7 @@
 package fr.uge.jee_td2.servlets;
 
 import fr.uge.jee_td2.JSPEnum;
+import fr.uge.jee_td2.MessageDErreurs;
 import fr.uge.jee_td2.TraitementException;
 import fr.uge.jee_td2.javaBeans.BOperations;
 import jakarta.servlet.RequestDispatcher;
@@ -175,7 +176,12 @@ public class SOperations extends HttpServlet {
 
         } catch (TraitementException e) {
             request.setAttribute("CodeAffichage", e.getMessage());
-            request.getRequestDispatcher(JSPEnum.JListeOperations.getJspPath()).forward(request, response);
+            if (e.getMessage().compareTo("31") == 0 || e.getMessage().compareTo("32") == 0) {
+                request.getRequestDispatcher(JSPEnum.JOperations.getJspPath()).forward(request, response);
+            }
+            else {
+                request.getRequestDispatcher(JSPEnum.JListeOperations.getJspPath()).forward(request, response);
+            }
         }
     }
 

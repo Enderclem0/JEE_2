@@ -213,6 +213,7 @@ public class BOperations {
 
     public void listerParDates() throws TraitementException {
         try {
+            veriDates();
             var query = """
                     SELECT DATE, OP, VALEUR FROM Operation WHERE NOCOMPTE = ? AND DATE BETWEEN ? AND ?
                     """;
@@ -228,10 +229,19 @@ public class BOperations {
                     var valeur = rs.getBigDecimal("VALEUR");
                     operationsParDates.add(new String[]{date.toString(), op, valeur.toString()});
                 }
+                if (operationsParDates.isEmpty()) {
+                    throw new TraitementException("32");
+                }
             }
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.getMessage());
             throw new TraitementException("3");
+        }
+    }
+
+    private void veriDates() throws TraitementException {
+        if (Date.valueOf(getDateInf()).compareTo(Date.valueOf(getDateSup())) > 0) {
+            throw new TraitementException("31");
         }
     }
 }
