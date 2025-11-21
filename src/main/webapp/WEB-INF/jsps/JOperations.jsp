@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="fr.uge.jee_td2.javaBeans.BOperations" %>
-<%@ page import="fr.uge.jee_td2.MessageDErreurs" %> <%-- 1. Importer les messages --%>
+<%@ page import="fr.uge.jee_td2.MessageDErreurs" %>
 
 <%
     String codeAffichage = (String) request.getAttribute("CodeAffichage");
@@ -72,6 +72,18 @@
     <input type="text" id="Valeur" name="Valeur">
     <label for="Valeur"> Euro</label>
     <br><br>
+
+    <%
+        String dInf = (bean.getDateInf() != null) ? bean.getDateInf() : "";
+        String dSup = (bean.getDateSup() != null) ? bean.getDateSup() : "";
+    %>
+
+    <label for="DateInf">Du :</label>
+    <input type="date" id="DateInf" name="DateInf" value="<%= dInf %>" required>
+
+    <label for="DateSup">Au :</label>
+    <input type="date" id="DateSup" name="DateSup" value="<%= dSup %>" required>
+    <button type="submit" name="Demande" value="Lister">Afficher la liste</button>
 
     <button type="submit" name="Demande" value="Traiter">Traiter</button>
     <button type="submit" name="Demande" value="FinTraitement">Fin du Traitement</button>

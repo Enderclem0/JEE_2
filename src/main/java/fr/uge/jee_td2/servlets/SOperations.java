@@ -23,7 +23,7 @@ public class SOperations extends HttpServlet {
         dispatcher.forward(request, response);
     }
 
-    private double verifyOperation(String valeurStr) throws TraitementException {
+    private void verifyOperation(String valeurStr) throws TraitementException {
         if (valeurStr == null || valeurStr.isBlank()) {
             throw new TraitementException("6"); // "La valeur est obligatoire"
         }
@@ -33,7 +33,6 @@ public class SOperations extends HttpServlet {
             if (valeur <= 0) {
                 throw new TraitementException("7"); // "La valeur doit être positive"
             }
-            return valeur;
         } catch (NumberFormatException e) {
             throw new TraitementException("6"); // "La valeur doit être un nombre"
         }
@@ -59,7 +58,6 @@ public class SOperations extends HttpServlet {
             bean.consulter();
             bean.fermerConnexion();
 
-            // 4. Succès : Rester sur JOperations avec un message "Opération réussie"
             request.setAttribute("beanOperations", bean);
             request.setAttribute("CodeAffichage", "20");
 
@@ -67,7 +65,6 @@ public class SOperations extends HttpServlet {
             dispatcher.forward(request, response);
 
         } catch (TraitementException e) {
-            // 5. Échec : Rester sur JOperations avec le message d'erreur
             request.setAttribute("CodeAffichage", e.getMessage()); // ex: "6" ou "7"
 
             // Il faut quand même renvoyer les infos du compte !
@@ -114,6 +111,31 @@ public class SOperations extends HttpServlet {
         }
     }
 
+    private void processLister(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String noDeCompte = request.getParameter("NoDeCompte");
+        request.setAttribute("noDeCompte", noDeCompte);
+        BOperations bean = new BOperations();
+        bean.setDateInf(request.getParameter("DateInf"));
+        bean.setDateSup(request.getParameter("DateSup"));
+        bean.setNoDeCompte(noDeCompte);
+
+        try {
+            bean.ouvrirConnexion();
+            bean.consulter();
+            bean.listerParDates();
+            bean.fermerConnexion();
+
+            request.setAttribute("beanOperations", bean);
+            request.setAttribute("CodeAffichage", "10");
+            request.getRequestDispatcher(JSPEnum.JListeOperations.getJspPath()).forward(request, response);
+
+        } catch (TraitementException e) {
+            request.setAttribute("CodeAffichage", e.getMessage());
+            request.getRequestDispatcher(JSPEnum.JListeOperations.getJspPath()).forward(request, response);
+        }
+    }
+
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
@@ -127,6 +149,8 @@ public class SOperations extends HttpServlet {
 
         } else if ("FinTraitement".equals(demande)) {
             doGet(request, response);
+        } else if ("Lister".equals(demande)) {
+            processLister(request, response);
         } else {
             doGet(request, response);
         }
