@@ -32,6 +32,7 @@
                 break;
         }
     }
+    boolean isEcriture = request.isUserInRole("ecriture");
 
     String valPrecedente = "";
     String opPrecedente = "Crédit";
@@ -67,10 +68,20 @@
 
 <hr>
 
+<% if (isEcriture) { %>
+
 <h3>Opération à effectuer :</h3>
 <form action="${pageContext.request.contextPath}/Compte/GestionOperations" method="POST">
 
+    <%-- On renvoie toujours le N° de compte --%>
     <input type="hidden" name="NoDeCompte" value="<%= bean.getNoDeCompte() %>">
+
+    <%-- ================================================================= --%>
+    <%-- BLOC RÉSERVÉ AU RÔLE "ECRITURE" (Crédit / Débit / Traiter)        --%>
+    <%-- ================================================================= --%>
+    <% if (isEcriture) { %>
+
+    <h3>Opération à effectuer :</h3>
 
     <input type="radio" id="Crédit" name="Opération" value="Crédit" <%= opPrecedente.equals("Crédit") ? "checked" : "" %> />
     <label for="Crédit">Crédit</label>
@@ -85,21 +96,41 @@
     <label for="Valeur"> Euro</label>
     <br><br>
 
+    <button type="submit" name="Demande" value="Traiter">Traiter</button>
+
+    <hr>
+    <% } else { %>
+    <%-- Message pour les lecteurs (Optionnel, pour faire propre) --%>
+    <p><em>Mode Consultation Seule : Vous ne pouvez pas effectuer d'opérations.</em></p>
+    <hr>
+    <% } %>
+    <%-- ================================================================= --%>
+
+
+    <%-- BLOC VISIBLE PAR TOUS (Historique + Fin) --%>
+    <h3>Historique et Fin</h3>
+
     <%
         String dInf = (bean.getDateInf() != null) ? bean.getDateInf() : "";
         String dSup = (bean.getDateSup() != null) ? bean.getDateSup() : "";
     %>
 
     <label for="DateInf">Du :</label>
-    <input type="date" id="DateInf" name="DateInf" value="<%= dInf %>" required>
+    <input type="date" id="DateInf" name="DateInf" value="<%= dInf %>"> <%-- Retirez required si le bouton FinTraitement bloque --%>
 
     <label for="DateSup">Au :</label>
-    <input type="date" id="DateSup" name="DateSup" value="<%= dSup %>" required>
-    <button type="submit" name="Demande" value="Lister">Afficher la liste</button>
+    <input type="date" id="DateSup" name="DateSup" value="<%= dSup %>">
 
-    <button type="submit" name="Demande" value="Traiter">Traiter</button>
+    <button type="submit" name="Demande" value="Lister" formnovalidate>Afficher la liste</button>
+
+    <br><br>
+
+    <%-- Le bouton Fin doit être accessible à TOUS --%>
     <button type="submit" name="Demande" value="FinTraitement" formnovalidate>Fin du Traitement</button>
+
 </form>
+
+<% } %>
 
 <% } else { %>
 <%-- Ce bloc s'affiche si on arrive ici sans bean (ex: erreur grave) --%>

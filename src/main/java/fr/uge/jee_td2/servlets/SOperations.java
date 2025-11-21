@@ -39,7 +39,10 @@ public class SOperations extends HttpServlet {
     }
 
     private void processTraitement(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
+        if (!request.isUserInRole("ecriture")) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Vous n'avez pas les droits pour effectuer une opération.");
+            return;
+        }
         String noDeCompte = request.getParameter("NoDeCompte");
         String operation = request.getParameter("Opération");
         String valeurStr = request.getParameter("Valeur");
