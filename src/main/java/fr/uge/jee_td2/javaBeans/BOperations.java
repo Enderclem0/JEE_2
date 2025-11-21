@@ -3,6 +3,7 @@ package fr.uge.jee_td2.javaBeans;
 
 import fr.uge.jee_td2.TraitementException;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.*;
@@ -11,18 +12,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 
 public class BOperations {
-
-    static {
-        try {
-            Class.forName("org.mariadb.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("MariaDB JDBC Driver not found!", e);
-        }
-    }
-
-    private static final String DB_URL = "jdbc:mariadb://localhost:3306/jee";
-    private static final String USER = "jee_admin";
-    private static final String PASS = "root";
 
     private Connection connection;
 
@@ -102,14 +91,20 @@ public class BOperations {
         this.dateSup = dateSup;
     }
 
-    public void ouvrirConnexion() throws TraitementException {
+    public void ouvrirConnexion(DataSource ds) throws TraitementException {
+        if (ds == null) {
+            throw new TraitementException("21");
+        }
         try {
-            connection = DriverManager.getConnection(DB_URL, USER, PASS);
+
+            connection = ds.getConnection();
+
             connection.setAutoCommit(false);
-            System.out.println("Connection successful!");
+
+            System.out.println("Connexion via DataSource réussie !");
+
         } catch (SQLException e) {
-            // Handle any SQL errors
-            System.err.println("SQL Exception: " + e.getMessage());
+            System.err.println("Erreur de connexion : " + e.getMessage());
             throw new TraitementException("21");
         }
     }

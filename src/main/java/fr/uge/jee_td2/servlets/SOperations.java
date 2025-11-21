@@ -5,14 +5,13 @@ import fr.uge.jee_td2.TraitementException;
 import fr.uge.jee_td2.javaBeans.BOperations;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 
-@WebServlet("/Compte/GestionOperations")
 public class SOperations extends HttpServlet {
 
     @Override
@@ -48,7 +47,8 @@ public class SOperations extends HttpServlet {
 
         try {
             verifyOperation(valeurStr);
-            bean.ouvrirConnexion();
+            DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
+            bean.ouvrirConnexion(ds);
             bean.setNoDeCompte(noDeCompte);
             bean.setOp(operation);
             bean.setValeur(valeurStr);
@@ -69,7 +69,8 @@ public class SOperations extends HttpServlet {
             // Il faut quand même renvoyer les infos du compte !
             try {
                 // On re-consulte le compte pour avoir son état actuel
-                bean.ouvrirConnexion();
+                DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
+                bean.ouvrirConnexion(ds);
                 bean.setNoDeCompte(noDeCompte);
                 bean.consulter();
                 bean.fermerConnexion();
@@ -132,7 +133,8 @@ public class SOperations extends HttpServlet {
 
         // On re-consulte la BDD pour avoir le solde/nom à jour
         try {
-            bean.ouvrirConnexion();
+            DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
+            bean.ouvrirConnexion(ds);
             bean.consulter();
             bean.fermerConnexion();
         } catch (TraitementException e) {
@@ -160,9 +162,9 @@ public class SOperations extends HttpServlet {
             bean.setValeur(val);
         }
         bean.setOp(request.getParameter("Opération"));
-
         try {
-            bean.ouvrirConnexion();
+            DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
+            bean.ouvrirConnexion(ds);
             bean.consulter();
             bean.listerParDates();
             bean.fermerConnexion();
@@ -218,7 +220,8 @@ public class SOperations extends HttpServlet {
 
         BOperations bean = new BOperations();
         try {
-            bean.ouvrirConnexion();
+            DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
+            bean.ouvrirConnexion(ds);
             bean.setNoDeCompte(noDeCompte);
             bean.consulter();
         } finally {

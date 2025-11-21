@@ -3,4 +3,28 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
+
+    <context-param>
+        <param-name>banqueDataSource</param-name>
+        <param-value>jdbc/Banque</param-value>
+    </context-param>
+
+    <listener>
+        <listener-class>fr.uge.jee_td2.listeners.InitBanqueWeb</listener-class>
+    </listener>
+    <servlet>
+        <servlet-name>ServletOperations</servlet-name>
+        <servlet-class>fr.uge.jee_td2.servlets.SOperations</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>ServletOperations</servlet-name>
+        <url-pattern>/Compte/GestionOperations</url-pattern>
+    </servlet-mapping>
+
+    <resource-ref>
+        <res-ref-name>jdbc/Banque</res-ref-name>
+        <res-type>javax.sql.DataSource</res-type>
+        <res-auth>Container</res-auth>
+    </resource-ref>
 </web-app>
