@@ -13,11 +13,11 @@
         switch (codeAffichage) {
             case "10":
                 message = "La consultation s'est bien passée";
-                messageColor = "green";
+                messageColor = "blue";
                 break;
             case "20":
                 message = "Opération effectuée avec succès.";
-                messageColor = "green";
+                messageColor = "blue";
                 break;
 
             case "6":
