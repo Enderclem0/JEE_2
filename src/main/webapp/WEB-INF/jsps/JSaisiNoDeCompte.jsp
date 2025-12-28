@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="fr.uge.jee_td2.MessageDErreurs" %> <%-- 1. Importer la classe des messages --%>
+<%@ page import="fr.uge.jee_td2.MessageDErreurs" %>
 
 <%
     String codeAffichage = (String) request.getAttribute("CodeAffichage");
@@ -26,9 +26,8 @@
 <form action="${pageContext.request.contextPath}/Compte/GestionOperations" method="POST">
 
     Entrez le N° de compte:
-    <input type="text" id="NoDeCompte" name="NoDeCompte" value="<%= noCompteSaisi %>"> <%-- 3. Réafficher la saisie --%>
+    <input type="text" id="NoDeCompte" name="NoDeCompte" value="<%= noCompteSaisi %>">
 
-    <%-- 4. Le bouton envoie le paramètre "Demande" --%>
     <button type="submit" name="Demande" value="Consulter">Consulter</button>
 
     <br><br>
