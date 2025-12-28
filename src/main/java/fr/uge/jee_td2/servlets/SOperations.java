@@ -16,6 +16,10 @@ import java.util.logging.Logger;
 
 public class SOperations extends HttpServlet {
 
+    private DataSource getDataSource() {
+        return (DataSource) getServletContext().getAttribute("banqueDataSource");
+    }
+
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         request.setAttribute("CodeAffichage", "0");
@@ -52,15 +56,17 @@ public class SOperations extends HttpServlet {
 
         try {
             verifyOperation(valeurStr);
-            DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
-            bean.ouvrirConnexion(ds);
-            bean.setNoDeCompte(noDeCompte);
-            bean.setOp(operation);
-            bean.setValeur(valeurStr);
-            bean.traiter();
-
-            bean.consulter();
-            bean.fermerConnexion();
+            try {
+                bean.ouvrirConnexion(getDataSource());
+                bean.setNoDeCompte(noDeCompte);
+                bean.setOp(operation);
+                bean.setValeur(valeurStr);
+                bean.traiter();
+                bean.consulter();
+            }
+            finally {
+                try { bean.fermerConnexion(); } catch (TraitementException ignore) {}
+            }
 
             request.setAttribute("beanOperations", bean);
             request.setAttribute("CodeAffichage", "11");
@@ -74,11 +80,14 @@ public class SOperations extends HttpServlet {
             // Il faut quand même renvoyer les infos du compte !
             try {
                 // On re-consulte le compte pour avoir son état actuel
-                DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
-                bean.ouvrirConnexion(ds);
-                bean.setNoDeCompte(noDeCompte);
-                bean.consulter();
-                bean.fermerConnexion();
+                try {
+                    bean.ouvrirConnexion(getDataSource());
+                    bean.setNoDeCompte(noDeCompte);
+                    bean.consulter();
+                }
+                finally {
+                    try { bean.fermerConnexion(); } catch (TraitementException ignore) {}
+                }
             } catch (TraitementException e2) {
                 // Si la re-consultation échoue aussi, on renvoie à la saisie
                 request.setAttribute("CodeAffichage", e2.getMessage());
@@ -131,8 +140,7 @@ public class SOperations extends HttpServlet {
 
         // On re-consulte la BDD pour avoir le solde/nom à jour
         try {
-            DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
-            bean.ouvrirConnexion(ds);
+            bean.ouvrirConnexion(getDataSource());
             bean.consulter();
             bean.fermerConnexion();
         } catch (TraitementException e) {
@@ -180,11 +188,14 @@ public class SOperations extends HttpServlet {
 
         if (processNewVal(request, response, bean)) return;
         try {
-            DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
-            bean.ouvrirConnexion(ds);
-            bean.consulter();
-            bean.listerParDates();
-            bean.fermerConnexion();
+            try {
+                bean.ouvrirConnexion(getDataSource());
+                bean.consulter();
+                bean.listerParDates();
+            }
+            finally {
+                try { bean.fermerConnexion(); } catch (TraitementException ignore) {}
+            }
 
             request.setAttribute("beanOperations", bean);
             request.setAttribute("CodeAffichage", "10");
@@ -237,8 +248,7 @@ public class SOperations extends HttpServlet {
 
         BOperations bean = new BOperations();
         try {
-            DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
-            bean.ouvrirConnexion(ds);
+            bean.ouvrirConnexion(getDataSource());
             bean.setNoDeCompte(noDeCompte);
             bean.consulter();
         } finally {
