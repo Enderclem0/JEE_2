@@ -43,7 +43,10 @@ public class BOperations {
         return op;
     }
 
-    public String getValeur() {
+    public String getValeur() throws TraitementException {
+        if (valeur == null) {
+            throw new TraitementException("6");
+        }
         return String.valueOf(valeur.setScale(2, RoundingMode.HALF_UP));
     }
 
@@ -110,9 +113,13 @@ public class BOperations {
     }
 
     public void fermerConnexion() throws TraitementException {
+        if (connection == null) {
+            return;
+        }
         try {
             connection.close();
             System.out.println("Connection closed!");
+            connection = null;
         } catch (SQLException e) {
             // Handle any SQL errors
             System.err.println("SQL Exception: " + e.getMessage());
@@ -139,7 +146,7 @@ public class BOperations {
             }
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.getMessage());
-            throw new TraitementException("22");
+            throw new TraitementException("21");
         }
     }
 
@@ -155,7 +162,10 @@ public class BOperations {
             try (var preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setString(1, getNoDeCompte());
                 var rs = preparedStatement.executeQuery();
-                rs.next();
+                var nextStatus = rs.next();
+                if (!nextStatus) {
+                    throw new TraitementException("3");
+                }
                 this.ancienSolde = rs.getBigDecimal("SOLDE");
 
                 opPourBdd = switch (op) {
@@ -197,7 +207,7 @@ public class BOperations {
         } catch (SQLException e) {
             doCommit = false;
             System.err.println("SQL Exception: " + e.getMessage());
-            throw new TraitementException("22");
+            throw new TraitementException("21");
         } finally {
             try {
                 if (doCommit) {
@@ -206,14 +216,17 @@ public class BOperations {
                     connection.rollback();
                 }
             } catch (SQLException e) {
-                throw new TraitementException("22");
+                System.err.println("SQL Exception on rollback or commit: " + e.getMessage());
             }
         }
     }
 
     public void listerParDates() throws TraitementException {
+        if (connection == null) {
+            throw new TraitementException("21");
+        }
         try {
-            veriDates();
+            verifDates();
             var query = """
                     SELECT DATE, OP, VALEUR FROM Operation WHERE NOCOMPTE = ? AND DATE BETWEEN ? AND ?
                     """;
@@ -239,7 +252,7 @@ public class BOperations {
         }
     }
 
-    private void veriDates() throws TraitementException {
+    private void verifDates() throws TraitementException {
         if (Date.valueOf(getDateInf()).compareTo(Date.valueOf(getDateSup())) > 0) {
             throw new TraitementException("31");
         }

@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 public class SOperations extends HttpServlet {
 
@@ -62,7 +63,7 @@ public class SOperations extends HttpServlet {
             bean.fermerConnexion();
 
             request.setAttribute("beanOperations", bean);
-            request.setAttribute("CodeAffichage", "20");
+            request.setAttribute("CodeAffichage", "11");
 
             RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JOperations.getJspPath());
             dispatcher.forward(request, response);
@@ -126,14 +127,7 @@ public class SOperations extends HttpServlet {
         bean.setDateSup(request.getParameter("DateSup"));
 
         // Restauration Valeur et Opération
-        String val = request.getParameter("Valeur");
-        if (val != null && !val.isBlank()) {
-            try {
-                bean.setValeur(val);
-            } catch (Exception e) {
-            }
-        }
-        bean.setOp(request.getParameter("Opération"));
+        if (processNewVal(request, response, bean)) return;
 
         // On re-consulte la BDD pour avoir le solde/nom à jour
         try {
@@ -142,15 +136,38 @@ public class SOperations extends HttpServlet {
             bean.consulter();
             bean.fermerConnexion();
         } catch (TraitementException e) {
-            // Gérer l'erreur si besoin
+            request.setAttribute("CodeAffichage", e.getMessage());
+            request.setAttribute("beanOperations", bean);
+            request.getRequestDispatcher(JSPEnum.JOperations.getJspPath()).forward(request, response);
+            return;
+        }
+        finally {
+            try { bean.fermerConnexion(); } catch (TraitementException ignore) {}
         }
 
         request.setAttribute("beanOperations", bean);
-        request.setAttribute("CodeAffichage", "12"); // Code "Retour" (facultatif)
+        request.setAttribute("CodeAffichage", "12");
 
         // On renvoie vers la page principale
         RequestDispatcher dispatcher = request.getRequestDispatcher(JSPEnum.JOperations.getJspPath());
         dispatcher.forward(request, response);
+    }
+
+    private boolean processNewVal(HttpServletRequest request, HttpServletResponse response, BOperations bean) throws ServletException, IOException {
+        String val = request.getParameter("Valeur");
+        if (val != null && !val.isBlank()) {
+            try {
+                bean.setValeur(val);
+            }
+            catch (NumberFormatException e) {
+                request.setAttribute("CodeAffichage", "6");
+                request.setAttribute("beanOperations", bean);
+                request.getRequestDispatcher(JSPEnum.JOperations.getJspPath()).forward(request, response);
+                return true;
+            }
+        }
+        bean.setOp(request.getParameter("Opération"));
+        return false;
     }
 
     private void processLister(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -161,11 +178,7 @@ public class SOperations extends HttpServlet {
         bean.setDateSup(request.getParameter("DateSup"));
         bean.setNoDeCompte(noDeCompte);
 
-        String val = request.getParameter("Valeur");
-        if (val != null && !val.isBlank()) {
-            bean.setValeur(val);
-        }
-        bean.setOp(request.getParameter("Opération"));
+        if (processNewVal(request, response, bean)) return;
         try {
             DataSource ds = (DataSource) getServletContext().getAttribute("banqueDataSource");
             bean.ouvrirConnexion(ds);
@@ -191,20 +204,15 @@ public class SOperations extends HttpServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
-        String demande = request.getParameter("Demande");
+        var demande = request.getParameter("Demande");
 
-        if ("Consulter".equals(demande)) {
-            processConsultation(request, response);
-        } else if ("Traiter".equals(demande)) {
-            processTraitement(request, response);
-        } else if ("FinTraitement".equals(demande)) {
-            doGet(request, response);
-        } else if ("Lister".equals(demande)) {
-            processLister(request, response);
-        } else if ("Retour".equals(demande)) {
-            processRetour(request, response);
-        } else {
-            doGet(request, response);
+        switch (demande) {
+            case "Consulter" -> processConsultation(request, response);
+            case "Traiter" -> processTraitement(request, response);
+            case "FinTraitement" -> doGet(request, response);
+            case "Lister" -> processLister(request, response);
+            case "Retour" -> processRetour(request, response);
+            case null, default -> doGet(request, response);
         }
     }
 
@@ -234,11 +242,7 @@ public class SOperations extends HttpServlet {
             bean.setNoDeCompte(noDeCompte);
             bean.consulter();
         } finally {
-            try {
-                bean.fermerConnexion();
-            } catch (TraitementException e) {
-                e.printStackTrace();
-            }
+            try {bean.fermerConnexion();} catch (TraitementException ignored) {}
         }
         return bean;
     }

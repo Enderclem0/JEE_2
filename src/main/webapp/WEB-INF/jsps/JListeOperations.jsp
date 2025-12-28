@@ -51,7 +51,7 @@
     String dateInf = (bean.getDateInf() != null) ? bean.getDateInf() : "";
     String dateSup = (bean.getDateSup() != null) ? bean.getDateSup() : "";
 
-    String valeur = "";
+    String valeur;
     try { valeur = bean.getValeur(); } catch (Exception e) { valeur = ""; }
 
     String operation = (bean.getOp() != null) ? bean.getOp() : "Crédit";
